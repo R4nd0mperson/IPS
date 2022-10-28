@@ -1,4 +1,3 @@
-// IMU code based off
 /****************************************************************
  * Example1_Basics.ino
  * ICM 20948 Arduino Library Demo
@@ -10,43 +9,32 @@
  *
  * Distributed as-is; no warranty is given.
  ***************************************************************/
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
-
-//ESP32 WiFi Vars
-const char *ssid = "ssid";     // ***Remove before pushing***
-const char *password = "password";  //***Remove before pushing***
-WiFiClient client;
-HTTPClient http;
-
-// Google Sheets vars
-String gsheetDeployId = "gsheetdeployid";
+#include "ICM_20948.h" // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
 
 //#define USE_SPI       // Uncomment this to use SPI
 
 #define SERIAL_PORT Serial
 
-#define SPI_PORT SPI  // Your desired SPI port.       Used only when "USE_SPI" is defined
-#define CS_PIN 2      // Which pin you connect CS to. Used only when "USE_SPI" is defined
+#define SPI_PORT SPI // Your desired SPI port.       Used only when "USE_SPI" is defined
+#define CS_PIN 2     // Which pin you connect CS to. Used only when "USE_SPI" is defined
 
-#define WIRE_PORT Wire  // Your desired Wire port.      Used when "USE_SPI" is not defined
-#define AD0_VAL 1       // The value of the last bit of the I2C address.                \
+#define WIRE_PORT Wire // Your desired Wire port.      Used when "USE_SPI" is not defined
+#define AD0_VAL 1      // The value of the last bit of the I2C address.                \
                        // On the SparkFun 9DoF IMU breakout the default is 1, and when \
                        // the ADR jumper is closed the value becomes 0
 
 #ifdef USE_SPI
-ICM_20948_SPI myICM;  // If using SPI create an ICM_20948_SPI object
+ICM_20948_SPI myICM; // If using SPI create an ICM_20948_SPI object
 #else
-ICM_20948_I2C myICM;  // Otherwise create an ICM_20948_I2C object
+ICM_20948_I2C myICM; // Otherwise create an ICM_20948_I2C object
 #endif
 
-struct timeval tv_now;
-
-void setup() {
+void setup()
+{
 
   SERIAL_PORT.begin(115200);
-  while (!SERIAL_PORT) {
+  while (!SERIAL_PORT)
+  {
   };
 
 #ifdef USE_SPI
@@ -59,7 +47,8 @@ void setup() {
   //myICM.enableDebugging(); // Uncomment this line to enable helpful debug messages on Serial
 
   bool initialized = false;
-  while (!initialized) {
+  while (!initialized)
+  {
 
 #ifdef USE_SPI
     myICM.begin(CS_PIN, SPI_PORT);
@@ -69,105 +58,84 @@ void setup() {
 
     SERIAL_PORT.print(F("Initialization of the sensor returned: "));
     SERIAL_PORT.println(myICM.statusString());
-    if (myICM.status != ICM_20948_Stat_Ok) {
+    if (myICM.status != ICM_20948_Stat_Ok)
+    {
       SERIAL_PORT.println("Trying again...");
       delay(500);
-    } else {
+    }
+    else
+    {
       initialized = true;
     }
   }
-
-  // Connect/reconnect to WiFi
-  WiFi.mode(WIFI_STA);  //Set Wifi mode to station mode - ESP32 connects to an access point
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to wifi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\n Connected to wifi");
-
 }
 
-void loop() {
+void loop()
+{
 
-  if (myICM.dataReady()) {
-    myICM.getAGMT();          // The values are only updated when you call 'getAGMT'
-                              //    printRawAGMT( myICM.agmt );     // Uncomment this to see the raw values, taken directly from the agmt structure
-    printScaledAGMT(&myICM);  // This function takes into account the scale settings from when the measurement was made to calculate the values with units
-    delay(5);
-  } else {
+  if (myICM.dataReady())
+  {
+    myICM.getAGMT();         // The values are only updated when you call 'getAGMT'
+                             //    printRawAGMT( myICM.agmt );     // Uncomment this to see the raw values, taken directly from the agmt structure
+    printScaledAGMT(&myICM); // This function takes into account the scale settings from when the measurement was made to calculate the values with units
+    delay(30);
+  }
+  else
+  {
     SERIAL_PORT.println("Waiting for data");
     delay(500);
   }
-
-  //SERIAL_PORT.print(getTimestamp());
-  if (gsheetwrite(&myICM)==200){
-    SERIAL_PORT.println("Data sent");
-  }
-}
-
-// helper functions
-
-int gsheetwrite(ICM_20948_I2C *sensor) {
-  float ax = sensor->accX();
-  float ay = sensor->accY();
-  float az = sensor->accZ();
-  float gx = sensor->gyrX();
-  float gy = sensor->gyrY();
-  float gz = sensor->gyrZ();
-  float mx = sensor->magX();
-  float my = sensor->magY();
-  float mz = sensor->magZ();
-  String urlFinal = "https://script.google.com/macros/s/" + gsheetDeployId + "/exec?ax=" + String(ax) +"&ay=" + String(ay) +"&az=" + String(az) 
-  +"&gx=" + String(ay) +"&gy=" + String(gy)+"&gz=" + String(gz) +"&mx=" + String(mx)+"&my=" + String(my) +"&mz=" + String(mz);
-  // Serial.print(urlFinal);
-  http.begin(urlFinal);
-  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  return http.GET(); // http status code
-}
-
-int64_t getTimestamp() {
-  gettimeofday(&tv_now, NULL);
-  return (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
 }
 
 // Below here are some helper functions to print the data nicely!
 
-void printPaddedInt16b(int16_t val) {
-  if (val > 0) {
+void printPaddedInt16b(int16_t val)
+{
+  if (val > 0)
+  {
     SERIAL_PORT.print(" ");
-    if (val < 10000) {
+    if (val < 10000)
+    {
       SERIAL_PORT.print("0");
     }
-    if (val < 1000) {
+    if (val < 1000)
+    {
       SERIAL_PORT.print("0");
     }
-    if (val < 100) {
+    if (val < 100)
+    {
       SERIAL_PORT.print("0");
     }
-    if (val < 10) {
+    if (val < 10)
+    {
       SERIAL_PORT.print("0");
     }
-  } else {
+  }
+  else
+  {
     SERIAL_PORT.print("-");
-    if (abs(val) < 10000) {
+    if (abs(val) < 10000)
+    {
       SERIAL_PORT.print("0");
     }
-    if (abs(val) < 1000) {
+    if (abs(val) < 1000)
+    {
       SERIAL_PORT.print("0");
     }
-    if (abs(val) < 100) {
+    if (abs(val) < 100)
+    {
       SERIAL_PORT.print("0");
     }
-    if (abs(val) < 10) {
+    if (abs(val) < 10)
+    {
       SERIAL_PORT.print("0");
     }
   }
   SERIAL_PORT.print(abs(val));
 }
 
-void printRawAGMT(ICM_20948_AGMT_t agmt) {
+void printRawAGMT(ICM_20948_AGMT_t agmt)
+{
   SERIAL_PORT.print("RAW. Acc [ ");
   printPaddedInt16b(agmt.acc.axes.x);
   SERIAL_PORT.print(", ");
@@ -192,38 +160,53 @@ void printRawAGMT(ICM_20948_AGMT_t agmt) {
   SERIAL_PORT.println();
 }
 
-void printFormattedFloat(float val, uint8_t leading, uint8_t decimals) {
+void printFormattedFloat(float val, uint8_t leading, uint8_t decimals)
+{
   float aval = abs(val);
-  if (val < 0) {
+  if (val < 0)
+  {
     SERIAL_PORT.print("-");
-  } else {
+  }
+  else
+  {
     SERIAL_PORT.print(" ");
   }
-  for (uint8_t indi = 0; indi < leading; indi++) {
+  for (uint8_t indi = 0; indi < leading; indi++)
+  {
     uint32_t tenpow = 0;
-    if (indi < (leading - 1)) {
+    if (indi < (leading - 1))
+    {
       tenpow = 1;
     }
-    for (uint8_t c = 0; c < (leading - 1 - indi); c++) {
+    for (uint8_t c = 0; c < (leading - 1 - indi); c++)
+    {
       tenpow *= 10;
     }
-    if (aval < tenpow) {
+    if (aval < tenpow)
+    {
       SERIAL_PORT.print("0");
-    } else {
+    }
+    else
+    {
       break;
     }
   }
-  if (val < 0) {
+  if (val < 0)
+  {
     SERIAL_PORT.print(-val, decimals);
-  } else {
+  }
+  else
+  {
     SERIAL_PORT.print(val, decimals);
   }
 }
 
 #ifdef USE_SPI
-void printScaledAGMT(ICM_20948_SPI *sensor) {
+void printScaledAGMT(ICM_20948_SPI *sensor)
+{
 #else
-void printScaledAGMT(ICM_20948_I2C *sensor) {
+void printScaledAGMT(ICM_20948_I2C *sensor)
+{
 #endif
   SERIAL_PORT.print("Scaled. Acc (mg) [ ");
   printFormattedFloat(sensor->accX(), 5, 2);
