@@ -1,3 +1,4 @@
+// IMU code based off
 /****************************************************************
  * Example1_Basics.ino
  * ICM 20948 Arduino Library Demo
@@ -14,13 +15,13 @@
 #include "ICM_20948.h"  // Click here to get the library: http://librarymanager/All#SparkFun_ICM_20948_IMU
 
 //ESP32 WiFi Vars
-const char *ssid = "Katiekais";     // ***Remove before pushing***
-const char *password = "s857Y89*";  //***Remove before pushing***
+const char *ssid = "ssid";     // ***Remove before pushing***
+const char *password = "password";  //***Remove before pushing***
 WiFiClient client;
 HTTPClient http;
 
 // Google Sheets vars
-String gsheetDeployId = "AKfycbwSY-FrR864ckDJfnjtP77w7ptTaymMy1eGU4X0RB9eU7r5aoLzsRUa1wN4-GMcXznL";
+String gsheetDeployId = "gsheetdeployid";
 
 //#define USE_SPI       // Uncomment this to use SPI
 
